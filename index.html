@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather and Maps</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather and Location</h1>
+        <div>
+            <input type="text" id="location-input" placeholder="Enter a location">
+            <button id="search-btn">Search</button>
+        </div>
+        <div id="map" style="height: 400px; width: 100%;"></div>
+        <div id="weather">
+            <h2>Weather Information</h2>
+            <p id="weather-info"></p>
+        </div>
+    </div>
+    <script>
+        const apiKey = '5c1b47d8d4817fd0c7bbe5fcc214b949';
+
+        // Initialize map
+        const map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Function to fetch weather data
+        function fetchWeather(lat, lon) {
+            fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`)
+                .then(response => response.json())
+                .then(data => {
+                    const weatherInfo = `
+                        <strong>Location:</strong> ${data.name}<br>
+                        <strong>Temperature:</strong> ${data.main.temp}°C<br>
+                        <strong>Weather:</strong> ${data.weather[0].description}<br>
+                    `;
+                    document.getElementById('weather-info').innerHTML = weatherInfo;
+                })
+                .catch(error => console.error('Error fetching weather data:', error));
+        }
+
+        // Function to search location
+        document.getElementById('search-btn').addEventListener('click', () => {
+            const location = document.getElementById('location-input').value;
+            fetch(`https://nominatim.openstreetmap.org/search?q=${location}&format=json&limit=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const lat = data[0].lat;
+                        const lon = data[0].lon;
+                        map.setView([lat, lon], 13);
+                        L.marker([lat, lon]).addTo(map)
+                            .bindPopup(`<b>${data[0].display_name}</b>`)
+                            .openPopup();
+                        fetchWeather(lat, lon);
+                    } else {
+                        alert('Location not found.');
+                    }
+                })
+                .catch(error => console.error('Error fetching location data:', error));
+        });
+    </script>
+</body>
+</html>
